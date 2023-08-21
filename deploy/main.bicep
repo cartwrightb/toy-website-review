@@ -15,6 +15,7 @@ param storageAccountName string = 'toylaunch${uniqueString(resourceGroup().id)}'
 param environmentType string
 
 var storageAccountSkuName = (environmentType == 'prod') ? 'Standard_GRS' : 'Standard_LRS'
+var processOrderQeueName = 'processorder'
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
@@ -26,6 +27,14 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   properties: {
     accessTier: 'Hot'
   }
+  
+  resource qeueServices 'queueServices' existing = {
+    name: 'default'
+
+    resource processOrderQeue 'queues' = {
+      name: processOrderQeueName
+    }
+  }
 }
 
 module appService 'modules/appService.bicep' = {
@@ -33,6 +42,7 @@ module appService 'modules/appService.bicep' = {
   params: {
     location: location
     appServiceAppName: appServiceAppName
+    processOrderQueueName: storageAccount.name
     environmentType: environmentType
   }
 }
